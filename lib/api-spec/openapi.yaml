@@ -3,13 +3,15 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: EduTrack academic management API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: edutrack
+    description: Student, course, attendance, grading, and reporting operations
 paths:
   /healthz:
     get:
@@ -24,13 +26,429 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /edutrack/students:
+    get:
+      operationId: listStudents
+      tags: [edutrack]
+      summary: List students
+      responses:
+        "200":
+          description: Students in the academic portal
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentList"
+    post:
+      operationId: addStudent
+      tags: [edutrack]
+      summary: Add a student
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StudentInput"
+      responses:
+        "201":
+          description: Student created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Student"
+        "400":
+          description: Invalid student or duplicate roll number
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /edutrack/courses:
+    get:
+      operationId: listCourses
+      tags: [edutrack]
+      summary: List courses and assigned faculty
+      responses:
+        "200":
+          description: Courses
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CourseList"
+  /edutrack/attendance:
+    get:
+      operationId: getAttendanceRoster
+      tags: [edutrack]
+      summary: Get attendance status for a course and date
+      parameters:
+        - name: courseId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: date
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+      responses:
+        "200":
+          description: Student attendance roster
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceRoster"
+    put:
+      operationId: saveAttendance
+      tags: [edutrack]
+      summary: Save or update attendance for a course and date
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttendanceInput"
+      responses:
+        "200":
+          description: Attendance saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttendanceSaveResult"
+  /edutrack/grades:
+    get:
+      operationId: getGradeRoster
+      tags: [edutrack]
+      summary: Get marks for a course and exam
+      parameters:
+        - name: courseId
+          in: query
+          required: true
+          schema:
+            type: integer
+        - name: exam
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [Midterm, Final]
+      responses:
+        "200":
+          description: Students and current marks
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradeRoster"
+    put:
+      operationId: saveGrades
+      tags: [edutrack]
+      summary: Save or update marks for a course and exam
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GradeInput"
+      responses:
+        "200":
+          description: Marks saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GradeSaveResult"
+  /edutrack/reports/{studentId}:
+    get:
+      operationId: getReportCard
+      tags: [edutrack]
+      summary: Get a student's report card
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Printable report card data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReportCard"
+        "404":
+          description: Student not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /edutrack/student-dashboard/{studentId}:
+    get:
+      operationId: getStudentDashboard
+      tags: [edutrack]
+      summary: Get a student's dashboard
+      parameters:
+        - name: studentId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Attendance, marks, and academic summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StudentDashboard"
+  /edutrack/admin/overview:
+    get:
+      operationId: getAdminOverview
+      tags: [edutrack]
+      summary: Get administration summary and student risks
+      responses:
+        "200":
+          description: Academic administration overview
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOverview"
+  /edutrack/quote:
+    get:
+      operationId: getQuoteOfTheDay
+      tags: [edutrack]
+      summary: Get quote of the day
+      responses:
+        "200":
+          description: Quote from ZenQuotes or the built-in fallback
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DailyQuote"
 components:
   schemas:
     HealthStatus:
       type: object
+      required: [status]
       properties:
         status:
           type: string
-      required:
-        - status
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: string
+    Student:
+      type: object
+      required: [id, name, rollNumber, className]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        rollNumber: { type: string }
+        className: { type: string }
+    StudentInput:
+      type: object
+      required: [name, rollNumber]
+      properties:
+        name: { type: string, minLength: 1 }
+        rollNumber: { type: string, minLength: 1 }
+        className: { type: string, default: CSE-A }
+    StudentList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Student"
+    Faculty:
+      type: object
+      required: [id, name, email]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        email: { type: string }
+    Course:
+      type: object
+      required: [id, name, courseCode, facultyId, facultyName]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        courseCode: { type: string }
+        facultyId: { type: integer }
+        facultyName: { type: string }
+    CourseList:
+      type: array
+      items:
+        $ref: "#/components/schemas/Course"
+    AttendanceStatus:
+      type: object
+      required: [studentId, name, rollNumber, present]
+      properties:
+        studentId: { type: integer }
+        name: { type: string }
+        rollNumber: { type: string }
+        present: { type: boolean }
+    AttendanceRoster:
+      type: object
+      required: [courseId, courseName, date, students]
+      properties:
+        courseId: { type: integer }
+        courseName: { type: string }
+        date: { type: string, format: date }
+        students:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceStatus"
+    AttendanceRecordInput:
+      type: object
+      required: [studentId, present]
+      properties:
+        studentId: { type: integer }
+        present: { type: boolean }
+    AttendanceInput:
+      type: object
+      required: [courseId, date, records]
+      properties:
+        courseId: { type: integer }
+        date: { type: string, format: date }
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttendanceRecordInput"
+    AttendanceSaveResult:
+      type: object
+      required: [savedCount, presentCount, absentCount]
+      properties:
+        savedCount: { type: integer }
+        presentCount: { type: integer }
+        absentCount: { type: integer }
+    GradeStatus:
+      type: object
+      required: [studentId, name, rollNumber, marks]
+      properties:
+        studentId: { type: integer }
+        name: { type: string }
+        rollNumber: { type: string }
+        marks: { type: ["integer", "null"], minimum: 0, maximum: 100 }
+    GradeRoster:
+      type: object
+      required: [courseId, courseName, exam, students]
+      properties:
+        courseId: { type: integer }
+        courseName: { type: string }
+        exam: { type: string, enum: [Midterm, Final] }
+        students:
+          type: array
+          items:
+            $ref: "#/components/schemas/GradeStatus"
+    GradeRecordInput:
+      type: object
+      required: [studentId, marks]
+      properties:
+        studentId: { type: integer }
+        marks: { type: integer, minimum: 0, maximum: 100 }
+    GradeInput:
+      type: object
+      required: [courseId, exam, records]
+      properties:
+        courseId: { type: integer }
+        exam: { type: string, enum: [Midterm, Final] }
+        records:
+          type: array
+          items:
+            $ref: "#/components/schemas/GradeRecordInput"
+    GradeSaveResult:
+      type: object
+      required: [savedCount]
+      properties:
+        savedCount: { type: integer }
+    CourseAttendance:
+      type: object
+      required: [courseId, courseName, present, total, percentage, classesToRecover]
+      properties:
+        courseId: { type: integer }
+        courseName: { type: string }
+        present: { type: integer }
+        total: { type: integer }
+        percentage: { type: number }
+        classesToRecover: { type: integer }
+    CourseReport:
+      type: object
+      required: [courseId, courseName, midterm, final, total, percentage, grade, result]
+      properties:
+        courseId: { type: integer }
+        courseName: { type: string }
+        midterm: { type: ["integer", "null"] }
+        final: { type: ["integer", "null"] }
+        total: { type: number }
+        percentage: { type: number }
+        grade: { type: string, enum: [A+, A, B, C, F] }
+        result: { type: string, enum: [Pass, Fail] }
+    StudentIdentity:
+      type: object
+      required: [id, name, rollNumber, className]
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        rollNumber: { type: string }
+        className: { type: string }
+    ReportCard:
+      type: object
+      required: [student, courses, averagePercentage, cgpa, overallAttendance]
+      properties:
+        student:
+          $ref: "#/components/schemas/StudentIdentity"
+        courses:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseReport"
+        averagePercentage: { type: number }
+        cgpa: { type: number }
+        overallAttendance: { type: number }
+    StudentDashboard:
+      type: object
+      required: [student, attendance, marks, averagePercentage, overallAttendance]
+      properties:
+        student:
+          $ref: "#/components/schemas/StudentIdentity"
+        attendance:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseAttendance"
+        marks:
+          type: array
+          items:
+            $ref: "#/components/schemas/CourseReport"
+        averagePercentage: { type: number }
+        overallAttendance: { type: number }
+    AtRiskStudent:
+      type: object
+      required: [studentId, name, rollNumber, attendancePercentage]
+      properties:
+        studentId: { type: integer }
+        name: { type: string }
+        rollNumber: { type: string }
+        attendancePercentage: { type: number }
+    GradeDistributionItem:
+      type: object
+      required: [grade, count]
+      properties:
+        grade: { type: string, enum: [A+, A, B, C, F] }
+        count: { type: integer }
+    AdminOverview:
+      type: object
+      required: [totalStudents, totalCourses, totalFaculty, averageAttendance, atRiskStudents, gradeDistribution]
+      properties:
+        totalStudents: { type: integer }
+        totalCourses: { type: integer }
+        totalFaculty: { type: integer }
+        averageAttendance: { type: number }
+        atRiskStudents:
+          type: array
+          items:
+            $ref: "#/components/schemas/AtRiskStudent"
+        gradeDistribution:
+          type: array
+          items:
+            $ref: "#/components/schemas/GradeDistributionItem"
+    DailyQuote:
+      type: object
+      required: [quote, author]
+      properties:
+        quote: { type: string }
+        author: { type: string }
 

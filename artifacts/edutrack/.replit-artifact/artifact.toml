@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "EduTrack"
+description = "A centralized academic management portal for faculty, students, and administrators to manage attendance, grades, report cards, and at-risk student insights."
+version = "1.0.0"
+id = "artifacts/edutrack"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 20369
+
+[services.development]
+run = "pnpm --filter @workspace/edutrack run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/edutrack", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/edutrack/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "20369"
+BASE_PATH = "/"

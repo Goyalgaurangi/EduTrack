@@ -1,0 +1,51 @@
+Build a hackathon MVP web app called "EduTrack": a centralized academic management portal that replaces paper registers and scattered spreadsheets with real-time attendance, grades, and report cards. It must be demo-ready, visually polished, and fully working in under 4 hours of build time.
+
+TECH STACK
+- Backend: Python Flask + SQLite (via sqlite3 or Flask-SQLAlchemy)
+- Frontend: HTML5, CSS3, vanilla JavaScript, Jinja templates
+- Charts: Chart.js via CDN
+- Icons: Lucide or Font Awesome via CDN
+- Single `app.py`, a `templates/` folder and a `static/` folder. Must run with one click on Replit (port 5000, host 0.0.0.0).
+
+NO authentication, NO tests, NO complex backend. Use a "Switch Role" dropdown in the navbar (Admin / Faculty / Student) stored in the session. When Student is selected, show a second dropdown to pick which student is "logged in".
+
+SEED DATA (auto-created on first run)
+- 12 students (name, roll no, class "CSE-A")
+- 5 courses (Data Structures, DBMS, Operating Systems, Maths, English)
+- 3 faculty, each assigned to courses
+- 20 days of pre-filled random attendance (about 60-95% per student, with 2-3 students deliberately below 75% for demo impact)
+- Marks for 2 exams (Midterm, Final) per student per course
+
+THE 3 CORE FEATURES
+
+1. Faculty: One-Click Attendance
+   - Pick course and date, then see the student list with a big Present/Absent toggle per student, a "Mark All Present" button, and Save.
+   - Save writes to the DB and shows a success toast.
+   - Prevent duplicate entries for the same course, student and date (upsert).
+
+2. Faculty: Grade Entry and Instant Report Card
+   - Grid to enter marks (out of 100) per student for a chosen course and exam, with Save.
+   - Auto-calculate total, percentage, grade (A+/A/B/C/F) and pass/fail.
+   - "View Report Card" button opens a clean, printable report card page for a student (all courses, totals, CGPA-style average, overall attendance %) with a "Print / Save as PDF" button using window.print() and print CSS.
+
+3. Student and Admin Real-Time Dashboards
+   - Student view: attendance percentage per course (progress rings or bars), with a red "⚠ Low Attendance" badge under 75% and a note of how many classes are needed to recover. Also a marks table, a bar chart of marks by course, and a link to their report card.
+   - Admin view: summary cards (total students, courses, faculty, average attendance), a "Students at risk" table (attendance under 75%), a doughnut chart of grade distribution, and a simple "Add Student" form that updates instantly.
+
+FREE API INTEGRATION (one only)
+- Call the ZenQuotes API (https://zenquotes.io/api/random) from a Flask route and show a "Quote of the Day" card on the Student dashboard. No API key needed. Add a hardcoded fallback quote if the call fails or times out.
+
+UI / DEMO POLISH
+- Modern, clean design: left sidebar, top navbar with the role switcher, card-based layout, rounded corners, soft shadows, and one accent colour with an indigo-to-purple gradient header.
+- Responsive and mobile friendly. Smooth hover transitions, toast notifications, and animated progress bars on load.
+- Colour coding: green (≥85%), amber (75-85%), red (<75%).
+- Dark mode toggle is optional if time permits.
+- App name and tagline on a simple landing page: "Attendance, grades and records, in real time."
+
+ROUTES (suggested)
+/ (landing + role select), /attendance, /grades, /report/<student_id>, /student-dashboard, /admin, plus small JSON endpoints for saving attendance, saving marks and adding a student.
+
+DELIVERABLES
+- Working app, seeded DB, and a short README with run instructions and a 60-second demo script (switch to Faculty and mark attendance, enter grades, switch to Student and see the live % drop and report card, switch to Admin and view the at-risk table).
+
+Build in this order: DB schema + seed → attendance → grades + report card → dashboards → UI polish → API quote. Keep the code simple and commented. Prioritize a working demo over extra features.
